@@ -1,0 +1,36 @@
+
+input[type="text"] {
+    border: 1px solid #ccc !important;
+    outline: none !important;
+}
+
+/* Стиль при фокусе */
+input[type="text"]:focus {
+    border: 1px solid #007bff !important;
+    outline: none !important;
+}
+.anom-buttons button {
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+/* Отключаем браузерные стили для автозаполненных полей */
+input[type="text"]:-webkit-autofill,
+input[type="text"]:-webkit-autofill:hover, 
+input[type="text"]:-webkit-autofill:focus {
+    border: 1px solid #ccc !important;
+    -webkit-text-fill-color: inherit !important;
+    -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.row label {
+  display: inline-block;
+  white-space: nowrap; 
+  margin-right: 10px;
+}

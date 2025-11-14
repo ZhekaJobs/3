@@ -1,0 +1,760 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Иванова,Козлова,Зверева</title>
+<link rel="stylesheet" href="style.css">
+<script language="Javascript">
+let hasAnomalies = 0;
+let maxv = 0;
+
+function CanvDraw() {
+    let mid = parseFloat(SredPloshad.value);
+    let sigma = parseFloat(Otklonenie.value);
+    let k = parseFloat(koef.value);
+    
+    let max_plus = mid + k * sigma;
+    let max_minus = mid - k * sigma;
+    let disp_plus = mid + sigma;
+    let disp_minus = mid - sigma;
+    
+    let canv = document.getElementById("canv");
+    let ctx = canv.getContext('2d');
+    canv.width = 600;
+    canv.height = 300;
+
+    ctx.clearRect(0, 0, canv.width, canv.height);
+
+    // Ось Y
+    ctx.beginPath();
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.moveTo(5.5, 5.5);
+    ctx.lineTo(3.5, 15.5);
+    ctx.moveTo(5.5, 5.5);
+    ctx.lineTo(7.5, 15.5);
+    ctx.moveTo(5.5, 5.5);
+    ctx.lineTo(5.5, 280.5);
+    ctx.lineTo(590.5, 280.5);
+    ctx.lineTo(580.5, 278.5);
+    ctx.moveTo(590.5, 280.5);
+    ctx.lineTo(580.5, 282.5);
+    ctx.stroke();
+
+    let n = ChisloYchastkov.value;
+
+    //собираем введенные значения участков и масштабируем по maxv
+    let values = [];
+    maxv = 0;
+    for (let i = 1; i <= n; i++) {
+        let v = parseFloat(document.getElementById(`ploshad${i}`).value);
+        if (!isNaN(v)) values.push(v);
+        if (v > maxv) maxv = v;
+    }
+
+    //0 в x
+    ctx.font = "12px Arial";
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.fillText("0", 5.5, 295.5);
+
+    //по y не слипаются
+    let verticalStart = 50; 
+    let verticalEnd = 250;   
+    let stepY = (verticalEnd - verticalStart) / (n - 1 || 1); 
+
+    for (let i = 0; i < n; i++) {
+        let index = i + 1;
+        let v = parseFloat(document.getElementById(`ploshad${index}`).value);
+        if (isNaN(v)) continue;
+
+        let x = 5.5 + 570.5 * v / maxv;        //X по значению
+        let y = verticalStart + i * stepY;     //равномерное распределение по Y
+
+        let isAnomaly = sigma > 0 && Math.abs(v - mid) / sigma >= k;
+
+        // Определяем цвет крестика
+        let crossColor;
+        if (selectedIndex === index) {
+            crossColor = "blue"; // синий для выбранного участка
+        } else if (isAnomaly) {
+            crossColor = "red"; // красный для аномалии
+        } else {
+            crossColor = "black"; // черный для нормальных значений
+        }
+
+        ctx.beginPath();
+        ctx.strokeStyle = crossColor;
+        ctx.lineWidth = 1;
+        ctx.moveTo(x - 4, y - 4);
+        ctx.lineTo(x + 4, y + 4);
+        ctx.moveTo(x + 4, y - 4);
+        ctx.lineTo(x - 4, y + 4);
+        ctx.stroke();
+
+        //подпись
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        ctx.fillText(v, x, 295.5);
+    }
+
+    //красная линия макс аномалии (справа)
+    let redLineXMax = 5.5 + 570.5 * max_plus / maxv;
+    ctx.beginPath();
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 1;
+    ctx.moveTo(redLineXMax, 5.5);
+    ctx.lineTo(redLineXMax, 280.5);
+    ctx.stroke();
+    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = "red";
+    ctx.fillText("Аномал.", redLineXMax, 15);
+    ctx.font = "10px Arial";
+    ctx.fillText(Math.round(max_plus), redLineXMax, 30);
+
+    //красная линия мин аномалии (слева)
+    let redLineXMin = 5.5 + 570.5 * max_minus / maxv;
+    ctx.beginPath();
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 1;
+    ctx.moveTo(redLineXMin, 5.5);
+    ctx.lineTo(redLineXMin, 280.5);
+    ctx.stroke();
+    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = "red";
+    ctx.fillText("Аномал.", redLineXMin, 15);
+    ctx.font = "10px Arial";
+    ctx.fillText(Math.round(max_minus), redLineXMin, 30);
+
+    //зеленая
+    let greenLineX = 5.5 + 570.5 * mid / maxv;
+    ctx.beginPath();
+    ctx.strokeStyle = "green";
+    ctx.lineWidth = 1;
+    ctx.moveTo(greenLineX, 5.5);
+    ctx.lineTo(greenLineX, 280.5);
+    ctx.stroke();
+    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = "green";
+    ctx.fillText("Средн.", greenLineX, 15);
+    ctx.font = "10px Arial";
+    ctx.fillText(Math.round(mid), greenLineX, 30);
+
+    //желтые
+    let yellowPlusX = 5.5 + 570.5 * disp_plus / maxv;
+    let yellowMinusX = 5.5 + 570.5 * disp_minus / maxv;
+    ctx.beginPath();
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 1;
+    ctx.moveTo(yellowPlusX, 5.5);
+    ctx.lineTo(yellowPlusX, 280.5);
+    ctx.moveTo(yellowMinusX, 5.5);
+    ctx.lineTo(yellowMinusX, 280.5);
+    ctx.stroke();
+    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = "orange";
+    ctx.fillText("Откл.", yellowPlusX, 15);
+    ctx.font = "10px Arial";
+    ctx.fillText(Math.round(disp_plus), yellowPlusX, 30);
+    ctx.fillText("Откл.", yellowMinusX, 15);
+    ctx.fillText(Math.round(disp_minus), yellowMinusX, 30);
+}
+
+
+
+function changeCount(delta) {
+    let ChisloYchastkov = document.getElementById("ChisloYchastkov");
+    let div1 = document.getElementById("div1");
+
+    let currentValue = parseInt(ChisloYchastkov.value) || 0;
+    let newValue = currentValue + delta;
+    if (newValue < 1) newValue = 1;
+    ChisloYchastkov.value = newValue;
+
+    if (div1.style.display === "block") {
+        TableYchastki();
+    }
+}
+
+function TableYchastki() {
+    let div1 = document.getElementById("div1");
+    let mytextarea = document.getElementById("mytextarea");
+    let ChisloYchastkov = document.getElementById("ChisloYchastkov");
+
+    let n = ChisloYchastkov.value;
+    let a = mytextarea.value.split(/$\s*/m);
+    if (a.length != 0) {
+        n = a.length;
+        mytextarea.style.height = n * 15 + 'px';
+        ChisloYchastkov.value = n;
+    }
+
+    div1.style.display = "block";
+    div1.innerHTML = "";
+
+	for (let i = 1; i <= n; i++) {
+        let element1 = "ploshad" + i;
+		element2="koord"+i;	
+		if(localStorage[element2]==undefined) {localStorage[element2]=""}
+
+        if (localStorage[element1] == undefined) localStorage[element1] = "";
+		if(parametr.length>1) {localStorage[element1]=parametr[i-1]}
+		div1.innerHTML += 
+			"<div class='row'>" +
+			"<label class='lbl'>Площадь повреждённой территории на " + i + " участке:</label>" +
+			"<input type='text' id='ploshad" + i + "' value='" + (localStorage[element1] || "") + "'>" +
+			"<div style='display:inline-block;width:275px; margin-left:20px;'>Координаты контура <b>"+i+"-го участка</b></div>" +
+			"<input type='text' id='koord"+i+"' value='"+localStorage[element2]+"'>" +
+			"</div>";
+	}
+       
+
+    div1.innerHTML += "<hr><div class='row'><input type='button' value='Поиск аномальных значений' onClick='Calc()' id='Button2'></div>";
+
+    div1.innerHTML += "<hr><div class='row'><label class='lbl'>Общая площадь повреждённой территории:</label><input type='text' id='SumPloshad'></div>";
+    div1.innerHTML += "<div class='row'><label class='lbl'>Средняя площадь повреждённой территории:</label><input type='text' id='SredPloshad'></div>";
+    div1.innerHTML += "<div class='row'><label class='lbl'>Среднеквадратическое отклонение:</label><input type='text' id='Otklonenie'></div>";
+    div1.innerHTML += "<div class='row'><label class='lbl'>Коэффициент:</label><input type='text' id='koef'></div>";
+    localStorage["ChisloYchastkov"] = n;
+
+    let labels = div1.querySelectorAll(".lbl");
+    let maxWidth = 0;
+    labels.forEach(lbl => {
+        let w = lbl.offsetWidth;
+        if (w > maxWidth) maxWidth = w;
+    });
+    labels.forEach(lbl => {
+        lbl.style.width = maxWidth + "px";
+    });
+
+    if (a.length > 0) {
+        for (let i = 1; i <= n; i++) {
+            let element1 = "ploshad" + i;
+            document.getElementById(element1).value = a[i - 1];
+        }
+    }
+}
+
+function Save() {
+    let n = ChisloYchastkov.value;
+    let mysavedtext = "";
+    let hasData = false;
+    
+    // Проверяем есть ли данные для сохранения
+    for (let i = 1; i <= n; i++) {	
+        element1 = "ploshad" + i;	
+        let value = document.getElementById(element1).value;
+        if (value && value.trim() !== "") {
+            hasData = true;
+            break;
+        }
+    }
+    
+    // Если данных нет - показываем сообщение и выходим
+    if (!hasData) {
+        alert("Нет данных для сохранения!\nЗаполните поля перед сохранением.");
+        return;
+    }
+    
+    // Проверяем есть ли аномалии
+    if (hasAnomalies) {
+        // Показываем предупреждение
+        let userChoice = confirm("ВНИМАНИЕ: В данных обнаружены аномальные значения!\n\nРекомендуется устранить аномалии перед сохранением.\n\nВсё равно сохранить результаты?");
+        
+        // Если пользователь отказался - прерываем сохранение
+        if (!userChoice) {
+            return;
+        }
+    }
+    
+    // Сохраняем данные
+    for (let i = 1; i <= n; i++) {	
+        element1 = "ploshad" + i;	
+        mysavedtext = mysavedtext + document.getElementById(element1).value + ';';
+    }
+    
+    // Создаем ссылку для скачивания
+    document.write('<a href="data:text/plain;charset=utf-8,%EF%BB%BF' + encodeURIComponent(mysavedtext) + '" download="значения.txt">значения.txt</a>');
+    
+    // Показываем дополнительное сообщение если были аномалии
+	if (hasAnomalies) {
+		alert("Ссылка на сохранение файла с аномальными значениями создана!");
+	} else {
+		alert("Ссылка на сохранение файла успешно создана!");
+	}
+}	
+
+function Delete() {
+	let n=ChisloYchastkov.value;
+	for(let i=1;i<=n;i++)
+	{
+	element1="ploshad"+i;
+	document.getElementById(element1).value="";
+	localStorage[element1]="";
+	}
+	Calc();
+}
+
+function Calc() {
+    maxv = 0;
+    let div1 = document.getElementById("div1");
+    let ChisloYchastkov = document.getElementById("ChisloYchastkov");
+
+    let n = ChisloYchastkov.value;
+    let k;
+
+    if (n <= 5) k = 1.7;      //1.791
+    else if (n <= 10) k = 2.0;  //2.146
+    else if (n <= 15) k = 2.2;  //2.326
+    else if (n <= 20) k = 2.3;  //2.447
+    else if (n <= 25) k = 2.4;  //2.537
+    else k = 2.5;              //2.633
+
+    let koef = document.getElementById("koef");
+    koef.value = k;
+
+    //сбор данных для сортировки
+    let data = [];
+    for (let i = 1; i <= n; i++) {
+        let ploshadValue = document.getElementById("ploshad" + i).value;
+        let koordValue = document.getElementById("koord" + i).value;
+        data.push({
+            index: i,
+            ploshad: ploshadValue,
+            koord: koordValue,
+            numericValue: parseFloat(ploshadValue) || 0
+        });
+        localStorage["ploshad" + i] = ploshadValue;
+        localStorage["koord" + i] = koordValue;
+    }
+
+    //сортируем по возрастанию площади
+    data.sort((a, b) => a.numericValue - b.numericValue);
+
+    //обновление полей остортиров знач
+    for (let i = 0; i < n; i++) {
+        document.getElementById("ploshad" + (i + 1)).value = data[i].ploshad;
+        document.getElementById("koord" + (i + 1)).value = data[i].koord;
+    }
+
+    let SumPloshad = document.getElementById("SumPloshad");
+    let SredPloshad = document.getElementById("SredPloshad");
+    let Otklonenie = document.getElementById("Otklonenie");
+
+    SumPloshad.value = 0;
+    SredPloshad.value = 0;
+    Otklonenie.value = 0;
+
+    let arr = [];
+    for (let i = 1; i <= n; i++) {
+        let element1 = "ploshad" + i;
+        let v = Number(document.getElementById("ploshad" + i).value);
+        if (!isNaN(v)) arr.push(v);
+        if (parseFloat(document.getElementById(element1).value) > maxv) {
+            maxv = parseFloat(document.getElementById(element1).value);
+        }
+    }
+    let sum = arr.reduce((a, b) => a + b, 0);
+    let avg = sum / arr.length;
+    let disp = arr.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / arr.length;
+    let sigma = Math.sqrt(disp);
+
+    SumPloshad.value = sum.toFixed(2);
+    SredPloshad.value = avg.toFixed(2);
+    Otklonenie.value = sigma.toFixed(2);
+
+    hasAnomalies = 0;
+
+    //сброс выделений
+    for (let i = 1; i <= n; i++) {
+        let el = document.getElementById("ploshad" + i);
+        el.style.background = 'white';
+        let oldBtns = el.parentNode.querySelector(".anom-btns");
+        if (oldBtns) el.parentNode.removeChild(oldBtns);
+    }
+
+    //минаномалия
+    let minAnomalyIndex = -1;
+    let minAnomalyValue = Infinity;
+    
+    //максаномалия
+    let maxAnomalyIndex = -1;
+    let maxAnomalyValue = -Infinity;
+
+    for (let i = 1; i <= n; i++) {
+        let el = document.getElementById("ploshad" + i);
+        let value = parseFloat(el.value);
+        
+        if (!isNaN(value) && sigma > 0) {
+            let deviation = Math.abs(value - avg) / sigma;
+            
+            if (deviation >= k) {
+                hasAnomalies = 1;
+                
+                //минаномалия проверка
+                if (value < avg && value < minAnomalyValue) {
+                    minAnomalyValue = value;
+                    minAnomalyIndex = i;
+                }
+                
+                //максаномалия проверка
+                if (value > avg && value > maxAnomalyValue) {
+                    maxAnomalyValue = value;
+                    maxAnomalyIndex = i;
+                }
+            }
+        }
+    }
+
+    //выделение мин аномалии+кнопки
+    if (minAnomalyIndex !== -1) {
+        let el = document.getElementById("ploshad" + minAnomalyIndex);
+        el.style.background = 'red';
+        let btns = document.createElement("div");
+        btns.className = "anom-btns";
+        btns.style.display = "inline-flex";
+        btns.style.gap = "3px";
+        btns.innerHTML =
+            '<button onclick="AnomalHide(' + minAnomalyIndex + ')">-</button>' +
+            '<button onclick="AnomalMid(' + minAnomalyIndex + ')">mid</button>' +
+            '<button onclick="AnomalMax(' + minAnomalyIndex + ')">max</button>' +
+            '<button onclick="AnomalMaxCalc(' + minAnomalyIndex + ')">maxA</button>';
+        el.parentNode.appendChild(btns);
+    }
+	
+    if (maxAnomalyIndex !== -1) {
+        let el = document.getElementById("ploshad" + maxAnomalyIndex);
+        el.style.background = 'red';
+        let btns = document.createElement("div");
+        btns.className = "anom-btns";
+        btns.style.display = "inline-flex";
+        btns.style.gap = "3px";
+        btns.innerHTML =
+            '<button onclick="AnomalHide(' + maxAnomalyIndex + ')">-</button>' +
+            '<button onclick="AnomalMid(' + maxAnomalyIndex + ')">mid</button>' +
+            '<button onclick="AnomalMax(' + maxAnomalyIndex + ')">max</button>' +
+            '<button onclick="AnomalMaxCalc(' + maxAnomalyIndex + ')">maxA</button>';
+        el.parentNode.appendChild(btns);
+    }
+
+    CanvDraw();
+    map();
+}
+function AnomalHide(index) {
+    let myarray = [];
+    let j = 0;
+    let n = ChisloYchastkov.value;
+    for (let i = 1; i <= n; i++) {
+        let element1 = "ploshad" + i;
+        let value = parseFloat(document.getElementById(element1).value);
+        let avg = parseFloat(SredPloshad.value);
+        let sigma = parseFloat(Otklonenie.value);
+        let k = parseFloat(koef.value);
+        
+        // Сохраняем все значения кроме удаляемого
+        if (i !== index) {
+            myarray[j] = document.getElementById(element1).value;
+            j = j + 1;
+        }
+    }
+    ChisloYchastkov.value = j;
+    TableYchastki();
+    for (let i = 1; i <= j; i++) {
+        let element1 = "ploshad" + i;
+        document.getElementById(element1).value = myarray[i - 1];
+    }
+    Calc();
+}
+
+function AnomalMid(index) {
+    let avg = parseFloat(SredPloshad.value);
+    document.getElementById("ploshad" + index).value = Math.floor(avg);
+    document.getElementById("ploshad" + index).style.background = 'white';
+    Calc();
+}
+
+function AnomalMax(index) {
+    let n = ChisloYchastkov.value;
+    let mymax = 0;
+    
+    // Находим максимальное НЕаномальное значение
+    for (let i = 1; i <= n; i++) {
+        let element1 = "ploshad" + i;
+        let value = parseFloat(document.getElementById(element1).value);
+        let avg = parseFloat(SredPloshad.value);
+        let sigma = parseFloat(Otklonenie.value);
+        let k = parseFloat(koef.value);
+        
+        if (Math.abs(value - avg) / sigma < k) {
+            if (value > mymax) mymax = value;
+        }
+    }
+    
+    // Если нет неаномальных значений, используем среднее
+    if (mymax === 0) {
+        mymax = Math.floor(parseFloat(SredPloshad.value));
+    }
+    
+    document.getElementById("ploshad" + index).value = mymax;
+    document.getElementById("ploshad" + index).style.background = 'white';
+    Calc();
+}
+
+function AnomalMaxCalc(index) {
+    let currentValue = parseFloat(document.getElementById("ploshad" + index).value);
+    let avg = parseFloat(SredPloshad.value);
+    let sigma = parseFloat(Otklonenie.value);
+    let k = parseFloat(koef.value);
+    
+    let newValue;
+    
+    // Если текущее значение меньше среднего - это минимальная аномалия
+    if (currentValue < avg) {
+        // Для минимальной аномалии - устанавливаем значение чуть выше порога минимальной аномалии
+        newValue = Math.floor(avg - k * sigma * 0.99);
+    } else {
+        // Для максимальной аномалии - устанавливаем значение чуть ниже порога максимальной аномалии
+        newValue = Math.floor(avg + k * sigma * 0.99);
+    }
+    
+    // Гарантируем, что значение не отрицательное
+    if (newValue < 0) newValue = 0;
+    
+    document.getElementById("ploshad" + index).value = newValue;
+    document.getElementById("ploshad" + index).style.background = 'white';
+    Calc();
+}
+function fillTestData() {
+    let ChisloYchastkov = document.getElementById("ChisloYchastkov");
+    ChisloYchastkov.value = 10;
+    TableYchastki();
+    const testData = [30, 30, 41, 30, 30, 42, 30, 30, 43, 567];
+    for (let i = 1; i <= 10; i++) {
+        let element = document.getElementById("ploshad" + i);
+        if (element) element.value = testData[i - 1];
+    }
+    Calc();
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        let div1 = document.getElementById("div1");
+        if (div1.style.display === 'block') Calc();
+        event.preventDefault();
+    }
+});
+
+function myLoad() {
+    let ChisloYchastkov = document.getElementById("ChisloYchastkov");
+    if (localStorage["ChisloYchastkov"] > 0) {
+        ChisloYchastkov.value = localStorage["ChisloYchastkov"];
+    }
+	if (parametr.length>1) {ChisloYchastkov.value=parametr.length}
+	if (parametr.length > 1) {
+        setTimeout(function() {
+            TableYchastki(); 
+            setTimeout(function() {
+                Calc(); 
+				CanvDraw();
+            }, 200);
+        }, 100);
+    }
+}
+
+let selectedIndex = null; // глобальный индекс выделенного участка
+
+
+
+function map() {
+    let canv = document.getElementById("canv2");
+    let ctx = canv.getContext('2d');
+    canv.width = 600;
+    canv.height = 300;
+
+    let pic = new Image();
+    pic.src = 'map.jpg';
+
+    pic.onload = function() {
+        ctx.drawImage(pic, 0, 0, canv.width, canv.height);
+        //считываем статистические параметры
+        let n = parseFloat(ChisloYchastkov.value);
+        let mid = parseFloat(SredPloshad.value);
+        let sigma = parseFloat(Otklonenie.value);
+        let k = parseFloat(koef.value);
+        //линии отклонения вычисляем
+        let disp_plus = mid + sigma;
+        let disp_minus = mid - sigma;
+        let max_plus = mid + k * sigma;
+        let max_minus = mid - k * sigma;
+
+        // Находим минимальную и максимальную аномалии
+        let minAnomalyIndex = -1;
+        let minAnomalyValue = Infinity;
+        let maxAnomalyIndex = -1;
+        let maxAnomalyValue = -Infinity;
+
+        for (let i = 1; i <= n; i++) {
+            let value = parseFloat(document.getElementById("ploshad" + i).value);
+            if (!isNaN(value) && sigma > 0 && Math.abs(value - mid) / sigma >= k) {
+                if (value < mid && value < minAnomalyValue) {
+                    minAnomalyValue = value;
+                    minAnomalyIndex = i;
+                }
+                if (value > mid && value > maxAnomalyValue) {
+                    maxAnomalyValue = value;
+                    maxAnomalyIndex = i;
+                }
+            }
+        }
+
+        const greenShades = [
+            "rgba(0, 180, 0, 0.6)",
+            "rgba(34, 200, 34, 0.6)",
+            "rgba(50, 220, 50, 0.6)",
+            "rgba(70, 240, 70, 0.6)",
+            "rgba(90, 255, 90, 0.6)"
+        ];
+
+        const yellowShades = [
+            "rgba(255, 255, 120, 0.6)",
+            "rgba(255, 255, 80, 0.6)",
+            "rgba(255, 230, 50, 0.6)",
+            "rgba(255, 210, 30, 0.6)",
+            "rgba(255, 200, 0, 0.6)"
+        ];
+        //проходим через оттенки по кругу
+        let gIndex = 0;
+        let yIndex = 0;
+
+        for (let i = 1; i <= n; i++) {
+            let sredX = 0;
+            let sredY = 0;
+
+            let element1 = "ploshad" + i;
+            let element2 = "koord" + i;
+
+            let value = parseFloat(document.getElementById(element1).value);
+            if (isNaN(value)) continue;
+
+            let koord = document.getElementById(element2).value;
+            let koordmass = koord.split(";");
+
+            ctx.beginPath();
+
+            let fillColor = "rgba(255, 255, 0, 0.7)";
+            let isAnomaly = sigma > 0 && Math.abs(value - mid) / sigma >= k;
+
+            if (selectedIndex === i) {
+                fillColor = "rgba(0, 0, 255, 0.4)"; //синий
+            } else if (i === minAnomalyIndex) {
+                fillColor = "rgba(255, 0, 0, 0.7)"; //красный для минимальной аномалии
+            } else if (i === maxAnomalyIndex) {
+                fillColor = "rgba(255, 0, 0, 0.7)"; //красный для максимальной аномалии
+            } else if (value >= disp_minus && value <= disp_plus) {
+                fillColor = greenShades[gIndex % greenShades.length];
+                gIndex++;
+            } else if (
+                (value > disp_plus && value < max_plus) ||
+                (value < disp_minus && value > max_minus)//между зеленой и красной - желтый
+            ) {
+                fillColor = yellowShades[yIndex % yellowShades.length];
+                yIndex++;
+            }
+
+            ctx.fillStyle = fillColor;
+
+            //геометр центр
+            for (let j = 1; j < koordmass.length; j += 2) {
+                if (j > 1) {
+                    ctx.lineTo(koordmass[j - 1], koordmass[j]);
+                } else {
+                    ctx.moveTo(koordmass[j - 1], koordmass[j]);
+                }
+
+                sredX = (sredX * ((koordmass.length - 1) / 2) + parseFloat(koordmass[j - 1])) / ((koordmass.length - 1) / 2);
+                sredY = (sredY * ((koordmass.length - 1) / 2) + parseFloat(koordmass[j])) / ((koordmass.length - 1) / 2);
+            }
+
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.fillStyle = "black";
+            ctx.font = "italic 16pt Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(document.getElementById(element1).value, sredX, sredY);
+        }
+    };
+}
+
+
+
+
+document.addEventListener("focusin", function(e) {
+    if (e.target.id && (e.target.id.startsWith("ploshad") || e.target.id.startsWith("koord"))) {
+        let num = parseInt(e.target.id.replace(/\D/g, ""));
+        if (!isNaN(num)) {
+            selectedIndex = num;
+            map(); 
+        }
+    }
+});
+
+document.addEventListener("focusout", function(e) {
+    if (e.target.id && (e.target.id.startsWith("ploshad") || e.target.id.startsWith("koord"))) {
+        selectedIndex = null;
+        map(); 
+    }
+});
+
+document.addEventListener("focusin", function(e) {
+    if (e.target.id && (e.target.id.startsWith("ploshad") || e.target.id.startsWith("koord"))) {
+        let num = parseInt(e.target.id.replace(/\D/g, ""));
+        if (!isNaN(num)) {
+            selectedIndex = num;
+            map(); 
+            CanvDraw(); //график с новым цветом
+        }
+    }
+});
+
+document.addEventListener("focusout", function(e) {
+    if (e.target.id && (e.target.id.startsWith("ploshad") || e.target.id.startsWith("koord"))) {
+        selectedIndex = null;
+        map(); 
+        CanvDraw(); //без выделения график
+    }
+});
+
+
+
+
+let parametr=location.search.substring(1).split("&");
+</script>
+</head>
+<body onLoad="myLoad()">
+
+<b>Количество лесных участков, подверженных болезни</b><br><br>
+<div style="display: inline-block;">
+    <input type="text" value="10" id="ChisloYchastkov">
+    <input type="button" value="-" onclick="changeCount(-1)" style="margin-left: 5px;">
+    <input type="button" value="+" onclick="changeCount(1)" style="margin-left: 2px;">
+</div>
+<br><br>
+<div class="row" style="align-items: center;">
+    <input type="button" value="Далее" onClick="TableYchastki()" id="Button1">
+    <input type="button" value="Заполнить тестовыми данными" onclick="fillTestData()" style="margin-left: 10px;">
+</div>
+<div class="row" style="align-items: center;">
+    <input type="button" value="Сохранить результаты" onClick="Save()" id="Button3" style="margin-top: 10px;">
+    <input type="button" value="Удалить введенные значения" onClick="Delete()" id="Button4" style="margin-top: 10px; margin-left: 10px;">
+</div>
+<br><hr>
+<div id="div1" style="display:none"></div>
+
+<br>
+<textarea id="mytextarea" placeholder="Скопируйте сюда все значения" style="width:300px;"></textarea>
+<br>
+<canvas id='canv' style="width: 500px; height: 250px; border: 1px double black">Обновите браузер</canvas>
+<canvas id='canv2' style="width: 500px; height: 250px; border: 1px double black">Обновите браузер</canvas>
+</body>
+</html>
